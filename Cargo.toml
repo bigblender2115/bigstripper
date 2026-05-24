@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 img-parts = "0.3"
 clap = { version = "4", features = ["derive"] }
+walkdir = "2"

@@ -106,14 +106,6 @@ fn strip_file(input: &PathBuf, output: &PathBuf, dry_run: bool, replace: bool) {
 fn main() {
     let args = Cli::parse();
     let input = args.input;
-    let output = match &args.output {
-        Some(path) => path.clone(),
-        None => {
-            let stem = input.file_stem().unwrap().to_str().unwrap();
-            let ext = input.extension().unwrap().to_str().unwrap();
-            PathBuf::from(format!("{stem}_stripped.{ext}"))
-        }
-    };
 
     if input.is_dir() && args.output.is_some() {
         println!("warning: --output ignored for batch metadata stripping (folder mode)");
@@ -123,25 +115,28 @@ fn main() {
         for thing in WalkDir::new(&input) {
             let thing = thing.unwrap();
             let path = thing.path().to_path_buf();
-            let output = match &args.output {
-                Some(path) => path.clone(),
-                None => {
-                    let stem = match path.file_stem().and_then(|s| s.to_str()) {
-                        Some(s) => s,
-                        None => return,
-                    };
-                    let ext = match path.extension().and_then(|e| e.to_str()) {
-                        Some(e) => e,
-                        None => return,
-                    };
-                    PathBuf::from(format!("{stem}_stripped.{ext}"))
-                }
+            let stem = match path.file_stem().and_then(|s| s.to_str()) {
+                Some(s) => s,
+                None => continue,
             };
+            let ext = match path.extension().and_then(|e| e.to_str()) {
+                Some(e) => e,
+                None => continue,
+            };
+            let output = PathBuf::from(format!("{stem}_stripped.{ext}"));
             if path.is_file() {
                 strip_file(&path, &output, args.dry_run, args.replace);
             }
         }
     } else {
+        let output = match &args.output {
+                Some(path) => path.clone(),
+                None => {
+                    let stem = input.file_stem().unwrap().to_str().unwrap();
+                    let ext = input.extension().unwrap().to_str().unwrap();
+                    PathBuf::from(format!("{stem}_stripped.{ext}"))
+                }
+            };
         strip_file(&input, &output, args.dry_run, args.replace);
     }
 }
